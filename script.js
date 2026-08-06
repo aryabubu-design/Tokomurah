@@ -80,3 +80,63 @@ gridKatalog.addEventListener("click", (event) => {
         labelKeranjang.textContent = `Keranjang (${totalKeranjang})`;
     }
 });
+
+const API_URL = "https://improved-eureka-6v9ppq7p4r62x6vq-3000.app.github.dev/api/products";
+
+// Fungsi untuk menampilkan satu produk sebagai kartu HTML
+function buatKartuProduk(item) {
+  const kartu = document.createElement("div");
+  kartu.className = "bg-white rounded-xl shadow hover:shadow-lg transition p-4";
+  kartu.innerHTML = `
+    <div class="w-full h-40 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-gray-400 text-sm">Belum ada gambar</div>
+    <h4 class="font-semibold text-gray-800">${item.nama}</h4>
+    <p class="text-blue-700 font-bold mt-1">Rp ${item.harga.toLocaleString("id-ID")}</p>
+    <button class="w-full mt-3 bg-blue-700 text-white py-2 rounded-lg text-sm btn-tambah-keranjang">Tambah ke Keranjang</button>
+  `;
+  return kartu;
+}
+
+// Fungsi untuk mengambil & menampilkan seluruh produk dari API
+async function muatProduk() {
+  gridKatalog.innerHTML = `<p class="text-gray-400 col-span-full">Memuat produk...</p>`;
+
+  try {
+    const response = await fetch(API_URL);
+    const hasil = await response.json();
+
+    gridKatalog.innerHTML = ""; // kosongkan pesan "Memuat produk..."
+    hasil.data.forEach((item) => {
+      gridKatalog.appendChild(buatKartuProduk(item));
+    });
+  } catch (error) {
+    gridKatalog.innerHTML = `<p class="text-red-500 col-span-full">Gagal memuat produk. Pastikan server backend sedang berjalan.</p>`;
+  }
+}
+
+// Panggil fungsi ini begitu halaman selesai dimuat
+muatProduk();
+
+// script.js (perubahan)
+formProduk.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const nama = document.querySelector("#input-nama").value.trim();
+  const harga = Number(document.querySelector("#input-harga").value);
+
+  if (nama === "" || harga <= 0) {
+    pesanError.textContent = "Nama produk dan harga (lebih dari 0) wajib diisi.";
+    pesanError.classList.remove("hidden");
+    return;
+  }
+  pesanError.classList.add("hidden");
+
+  // Mengirim data produk baru ke backend
+  await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nama, harga }),
+  });
+
+  formProduk.reset();
+  muatProduk(); // memuat ulang data terbaru dari database
+});
